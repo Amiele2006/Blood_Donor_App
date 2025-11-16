@@ -10,7 +10,7 @@ export const getAllDonors = async () : Promise<Donor[]> => {
     return donors;
 }
 
-export const createDonor = async (data: CreateDonorRequest): Promise<Donor> => {
+export const createDonor = async (data: CreateDonorRequest): Promise<Donor |Donor[]> => {
     const donorRepo = AppDataSource.getRepository(Donor)
     
     const createdDonorEntity = donorRepo.create(data as any);
@@ -22,9 +22,37 @@ export const createDonor = async (data: CreateDonorRequest): Promise<Donor> => {
 }
 
 export const updateDonor = async (userId: string,data:Partial<Donor> ): Promise<Donor> {
-    const donorToUpdate = await findOne({
+
+    const donorRepo = AppDataSource.getRepository(Donor)
+
+    const donorToUpdate = await donorRepo.findOne({
         where: {
             user: { user_id: userId}
         }
     })
+
+    if (!donorToUpdate) {
+        throw new Error("User not found")
+    }
+
+    let processedData : Partial<Donor> = { };
+    if (data.next_donation_date) {
+        (processedData as any).next_donation_date = new Date(data.next_donation_date);
+    }
+    // Also handle clinic_id if it's being updated
+    if (data.blood_type) {
+        (processedData as any).blood_type = data.blood_type as any;
+    }
+
+    if (data.status) {
+        (processedData as any).status = data.status as any;
+    }
+
+    if (user && user.user_id === data.user_id) {
+        (processedData as any).user_id = data.user_id as any;
+    }
+
+    donorRepo.merge(donorToUpdate, processedData)
+    const updatedDonor = 
+
 }

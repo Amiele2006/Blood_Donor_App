@@ -6,15 +6,16 @@ import type { CreateDonorRequest } from "../schemas/requests/donor.request";
 const baseRepo = AppDataSource.getRepository(Donor)
 
 export const DonorRepository = baseRepo.extend({
-    async createDonor(this: Repository<Donor>, data: CreateDonorRequest): Promise<Donor> {
+    async createDonor(this: Repository<Donor>, data: CreateDonorRequest): Promise<Donor | Donor[]> {
         const newDonorData = {
-        ...data,
-        blood_type: Array.isArray(data.blood_type) ? data.blood_type.join(",") : data.blood_type,
+        user: { user_id: data.user_id},
+        blood_type: data.blood_type,
         next_donation_date: new Date(data.next_donation_date),
-    } ;
+        status: data.status,
+    };
 
-    const newDonor = this.create(newDonorData as DeepPartial<Donor>);
-    const saved = await this.save(newDonor);
+    const newDonor = this.create(newDonorData);
+    const saved = await this.save(newDonor) as Donor | Donor[];
     // const saved = Array.isArray(savedResult) ? savedResult[0] : savedResult;
     return saved;
     },
@@ -39,9 +40,9 @@ export const DonorRepository = baseRepo.extend({
 
     async getADonor(this:Repository<Donor>, userId: string): Promise<Donor |null > {
         const donor = await this.findOneBy({ user: { user_id: userId } as any});
-        if(donor) return null
+        if(!donor) return null
 
         return donor
-    }
+    },
 
 })
